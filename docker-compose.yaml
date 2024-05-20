@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: docker/telegram_bot/Dockerfile
+    image: bot_image
+    environment:
+      - TOKEN=${TOKEN}
+      - PASSWORD=${PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
+    depends_on:
+      - db
+
+  db:
+    build:
+      context: .
+      dockerfile: docker/db/Dockerfile
+    image: db_image
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  db_replica:
+    build:
+      context: .
+      dockerfile: docker/db_replica/Dockerfile
+    image: db_repl_image
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_replica_data:/var/lib/postgresql/data
+    depends_on:
+      - db
+  debian_ssh:
+    build:
+      context: .
+      dockerfile: ./docker/debian_ssh/Dockerfile
+    image: debian_ssh_image
+    environment:
+      - PASSWORD=${PASSWORD}
+
+volumes:
+  db_data:
+  db_replica_data:
